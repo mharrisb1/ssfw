@@ -6,6 +6,8 @@ edition = "2021"
 authors = ["Michael Harris <mharris@luabase.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/mharrisb1/ssfw"
+repository = "https://github.com/mharrisb1/ssfw"
 
 [dependencies]
 clap = { version = "4.5.0", features = ["derive"] }
