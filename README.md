@@ -1,4 +1,4 @@
-# ssfw - Super simple file watching
+# 🪬 ssfw - Super simple file watching
 
 ## Usage
 
@@ -11,7 +11,7 @@ ssfw --path src/** --command 'cc main.c && ./a.out'
 ```bash
 ssfw - Super simple file watcher
 
-Usage: sswf [OPTIONS] --path <PATH> --command <COMMAND>
+Usage: ssfw [OPTIONS] --path <PATH> --command <COMMAND>
 
 Options:
   -p, --path <PATH>        Monitoring path
