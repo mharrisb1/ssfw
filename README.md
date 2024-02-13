@@ -1,9 +1,9 @@
-# 🪬 ssfw - Super simple file watching
+# 🪬 ssfw - Super simple file watcher
 
 ## Usage
 
 ```bash
-ssfw --path src/** --command 'cc main.c && ./a.out'
+ssfw --path src/** --command 'cargo test'
 ```
 
 ## Help
@@ -20,3 +20,18 @@ Options:
   -h, --help               Print help
   -V, --version            Print version
 ```
+
+## Build
+
+> [!WARNING]
+> Only tested on Apple M1 Pro
+
+Currently, the only option for using this tool is to build it from source.
+
+```bash
+git clone https://github.com/mharrisb1/ssfw.git
+cd ssfw
+cargo build --release
+```
+
+Then add to path.
