@@ -1,59 +1,48 @@
 use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
-use clap::Parser;
-use glob::glob;
-use notify::{Config, PollWatcher, RecursiveMode, Watcher};
+use log::{debug, error, info};
 
-/// ssfw - Super simple file watcher
+use clap::Parser;
+use clap_verbosity_flag::{InfoLevel, Verbosity};
+use notify::Watcher;
+
+mod errors;
+
+use errors::SsfwError;
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
-    /// Monitoring path
+struct Config {
+    /// Monitoring path/glob
     #[arg(short, long)]
     path: String,
 
-    /// Command
-    #[arg(short, long)]
+    /// Run command
+    #[arg(short, long, default_value = ":")]
     command: String,
 
-    /// Toggle verbosity
-    #[arg(long, short)]
-    verbose: bool,
+    /// Poll duration (ms)
+    #[arg(long, default_value_t = 500)]
+    poll: u64,
+
+    #[command(flatten)]
+    verbose: Verbosity<InfoLevel>,
 }
 
-fn main() -> notify::Result<()> {
-    let args = Args::parse();
+fn main() -> Result<(), SsfwError> {
+    let config = Config::parse();
+    setup_logging(&config.verbose);
     let (tx, rx) = std::sync::mpsc::channel();
-    let conf = Config::default()
-        .with_compare_contents(true)
-        .with_poll_interval(Duration::from_millis(500));
-    let mut watcher = PollWatcher::new(tx, conf)?;
-    log!(
-        &args.verbose,
-        "Watching files at glob pattern {}",
-        &args.path
-    );
-    glob(&args.path)
-        .expect("Failed to read glob pattern")
-        .for_each(|entry| match entry {
-            Ok(path) => {
-                if let Err(e) = watcher.watch(&path, RecursiveMode::NonRecursive) {
-                    eprintln!("Error trying to add file {:?} to watcher: {}", path, e);
-                }
-            }
-            Err(e) => eprintln!("Glob error: {}", e),
-        });
-
+    let mut watcher = init_watcher(tx, config.poll)?;
+    let mut paths = glob::glob(&config.path)?;
+    register_paths(&mut watcher, &mut paths)?;
     let mut child: Option<Child> = None;
+    run_command(&config.command, &mut child)?;
     for res in rx {
         match res {
             Ok(event) => {
-                if let Err(e) = run_cmd(&args.command, &mut child, &args.verbose) {
-                    eprintln!("Failed to run command {}: {}", &args.command, e);
-                }
-                log!(
-                    &args.verbose,
+                debug!(
                     "Event detected for file(s) {}",
                     event
                         .paths
@@ -61,30 +50,65 @@ fn main() -> notify::Result<()> {
                         .map(|p| p.to_string_lossy())
                         .collect::<Vec<_>>()
                         .join(", ")
-                )
+                );
+                run_command(&config.command, &mut child)?;
             }
-            Err(e) => eprintln!("watch error: {:?}", e),
+            Err(e) => error!("watch error: {:?}", e),
         }
     }
     Ok(())
 }
 
-fn run_cmd(
-    cmd: &str,
-    child_process: &mut Option<Child>,
-    verbose: &bool,
-) -> Result<(), std::io::Error> {
+fn setup_logging(verbose: &Verbosity<InfoLevel>) {
+    env_logger::Builder::new()
+        .format_target(false)
+        .format_timestamp(None)
+        .filter_level(verbose.log_level_filter())
+        .init();
+}
+
+fn init_watcher<F>(handler: F, poll_ms: u64) -> notify::Result<notify::PollWatcher>
+where
+    F: notify::EventHandler,
+{
+    debug!("Initializing PollWatcher with poll_ms={}", poll_ms);
+    let config = notify::Config::default()
+        .with_compare_contents(true)
+        .with_poll_interval(Duration::from_millis(poll_ms));
+    notify::PollWatcher::new(handler, config)
+}
+
+fn register_paths(
+    watcher: &mut notify::PollWatcher,
+    paths: &mut glob::Paths,
+) -> Result<(), SsfwError> {
+    let mut n = 0;
+    for entry in paths.into_iter() {
+        let path = entry?;
+        if let Err(e) = watcher.watch(&path, notify::RecursiveMode::NonRecursive) {
+            error!("Error adding {} to watcher: {}", path.display(), e);
+        } else {
+            debug!("Added {} to watcher", path.display());
+            n += 1;
+        }
+    }
+    if n == 0 {
+        error!("No files matched given glob pattern");
+        Err(SsfwError::EmptyFileSet)
+    } else {
+        Ok(())
+    }
+}
+
+fn run_command(cmd: &str, child_process: &mut Option<Child>) -> Result<(), std::io::Error> {
     if let Some(child) = child_process {
         match child.kill() {
-            Ok(_) => log!(
-                verbose,
-                "Shutting down previous process <pid:{}>",
-                child.id()
-            ),
-            Err(e) => eprintln!("Failed to gracefully shutdown previous process {}", e),
+            Ok(_) => debug!("Shutting down previous process <pid:{}>", child.id()),
+            Err(e) => error!("Failed to gracefully shutdown previous process {}", e),
         }
         let _ = child.wait();
     }
+    info!("Running command: {}", &cmd);
     let new_child = Command::new("bash")
         .arg("-c")
         .arg(cmd)
@@ -93,13 +117,4 @@ fn run_cmd(
         .spawn()?;
     *child_process = Some(new_child);
     Ok(())
-}
-
-#[macro_export]
-macro_rules! log {
-    ($verbose:expr, $($arg:tt)*) => {
-        if *$verbose {
-            println!($($arg)*);
-        }
-    };
 }
