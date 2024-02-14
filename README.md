@@ -3,22 +3,27 @@
 ## Usage
 
 ```bash
-ssfw --path src/** --command 'cargo test'
+ssfw --path 'src/**' --command 'cargo test'
 ```
+
+> [!IMPORTANT]
+> Please note the use of single quotes around the glob. This is required.
 
 ## Help
 
 ```bash
-ssfw - Super simple file watcher
+🪬 Super simple file watcher
 
-Usage: ssfw [OPTIONS] --path <PATH> --command <COMMAND>
+Usage: ssfw [OPTIONS] --path <PATH>
 
 Options:
-  -p, --path <PATH>        Monitoring path
-  -c, --command <COMMAND>  Command
-  -v, --verbose            Toggle verbosity
+  -p, --path <PATH>        Monitoring path/glob
+  -c, --command <COMMAND>  Run command [default: :]
+      --poll <POLL>        Poll duration (ms) [default: 500]
+  -v, --verbose...         Increase logging verbosity
+  -q, --quiet...           Decrease logging verbosity
   -h, --help               Print help
-  -V, --version            Print version
+  -V, --version   
 ```
 
 ## Build
