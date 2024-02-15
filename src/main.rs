@@ -38,7 +38,6 @@ fn main() -> Result<(), SsfwError> {
     let mut paths = glob::glob(&config.path)?;
     register_paths(&mut watcher, &mut paths)?;
     let mut child: Option<Child> = None;
-    run_command(&config.command, &mut child)?;
     for res in rx {
         match res {
             Ok(event) => {
