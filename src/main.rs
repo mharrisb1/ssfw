@@ -33,8 +33,11 @@ struct Config {
 fn main() -> Result<(), SsfwError> {
     let config = Config::parse();
     setup_logging(&config.verbose);
+    info!("🪬 ssfw started");
+    info!("On change:\t{}", &config.command);
     let (tx, rx) = std::sync::mpsc::channel();
     let mut watcher = init_watcher(tx, config.poll)?;
+    info!("Glob pattern:\t{}", &config.path);
     let mut paths = glob::glob(&config.path)?;
     register_paths(&mut watcher, &mut paths)?;
     let mut child: Option<Child> = None;
@@ -95,6 +98,7 @@ fn register_paths(
         error!("No files matched given glob pattern");
         Err(SsfwError::EmptyFileSet)
     } else {
+        info!("Matching files:\t{}", n);
         Ok(())
     }
 }
