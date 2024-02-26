@@ -4,6 +4,7 @@ pub(crate) enum SsfwError {
     Notify(notify::Error),
     Pattern(glob::PatternError),
     Cmd(std::io::Error),
+    Regex(regex::Error),
     EmptyFileSet,
 }
 
@@ -14,6 +15,7 @@ impl std::fmt::Display for SsfwError {
             SsfwError::Pattern(..) => write!(f, "Invalid glob pattern"),
             SsfwError::Glob(..) => write!(f, "Glob error"),
             SsfwError::Cmd(..) => write!(f, "Error running command"),
+            SsfwError::Regex(..) => write!(f, "Error during regex operations"),
             SsfwError::EmptyFileSet => write!(f, "Pattern did not match any files"),
         }
     }
@@ -26,6 +28,7 @@ impl std::error::Error for SsfwError {
             SsfwError::Pattern(ref e) => Some(e),
             SsfwError::Glob(ref e) => Some(e),
             SsfwError::Cmd(ref e) => Some(e),
+            SsfwError::Regex(ref e) => Some(e),
             SsfwError::EmptyFileSet => None,
         }
     }
@@ -52,5 +55,11 @@ impl From<glob::GlobError> for SsfwError {
 impl From<std::io::Error> for SsfwError {
     fn from(err: std::io::Error) -> Self {
         SsfwError::Cmd(err)
+    }
+}
+
+impl From<regex::Error> for SsfwError {
+    fn from(err: regex::Error) -> Self {
+        SsfwError::Regex(err)
     }
 }

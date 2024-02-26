@@ -1,4 +1,4 @@
-use std::process::{Child, Command, Stdio};
+use std::process::Child;
 use std::time::Duration;
 
 use log::{debug, error, info};
@@ -6,10 +6,37 @@ use log::{debug, error, info};
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use notify::Watcher;
+use serde::Serialize;
 
 mod errors;
+mod renderer;
+mod subprocess;
 
-use errors::SsfwError;
+use crate::errors::SsfwError;
+use crate::renderer::render_command;
+use crate::subprocess::execute_command;
+
+#[derive(clap::ValueEnum, Clone, Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum Shell {
+    Zsh,
+    Bash,
+}
+
+impl std::fmt::Display for Shell {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl From<Shell> for String {
+    fn from(val: Shell) -> Self {
+        match val {
+            Shell::Zsh => "zsh".to_string(),
+            Shell::Bash => "bash".to_string(),
+        }
+    }
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -25,6 +52,10 @@ struct Config {
     /// Poll duration (ms)
     #[arg(long, default_value_t = 500)]
     poll: u64,
+
+    /// Shell to execute command in
+    #[arg(long, default_value = "zsh")]
+    sh: Shell,
 
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
@@ -53,7 +84,9 @@ fn main() -> Result<(), SsfwError> {
                         .collect::<Vec<_>>()
                         .join(", ")
                 );
-                run_command(&config.command, &mut child)?;
+                let shell: String = config.sh.clone().into();
+                let cmd = render_command(&config.command, &event)?;
+                execute_command(&cmd, &shell, &mut child)?;
             }
             Err(e) => error!("watch error: {:?}", e),
         }
@@ -101,23 +134,4 @@ fn register_paths(
         info!("Matching files:\t{}", n);
         Ok(())
     }
-}
-
-fn run_command(cmd: &str, child_process: &mut Option<Child>) -> Result<(), std::io::Error> {
-    if let Some(child) = child_process {
-        match child.kill() {
-            Ok(_) => debug!("Shutting down previous process <pid:{}>", child.id()),
-            Err(e) => error!("Failed to gracefully shutdown previous process {}", e),
-        }
-        let _ = child.wait();
-    }
-    info!("Running command: {}", &cmd);
-    let new_child = Command::new("bash")
-        .arg("-c")
-        .arg(cmd)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?;
-    *child_process = Some(new_child);
-    Ok(())
 }
