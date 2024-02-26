@@ -395,6 +395,7 @@ dependencies = [
  "glob",
  "log",
  "notify",
+ "regex",
  "serde",
 ]
 
