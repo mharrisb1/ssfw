@@ -40,13 +40,14 @@ pub(crate) fn execute_command(cmd: &str, shell: &str, child: &mut Option<Child>)
             if let Some(ref mut stdout_pipe) = proc.stdout {
                 stdout_pipe.read_to_string(&mut stdout)?;
             }
-            println!("{}", stdout);
+            print!("{}", stdout);
         } else {
             let mut stderr = String::new();
             if let Some(ref mut stderr_pipe) = proc.stderr {
                 stderr_pipe.read_to_string(&mut stderr)?;
             }
-            eprintln!("{}", stderr);
+            error!("Error running command");
+            eprint!("{}", stderr);
         }
     }
     Ok(())

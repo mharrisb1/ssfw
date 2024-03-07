@@ -1,20 +1,20 @@
+use log::info;
 use std::process::Child;
-use std::time::Duration;
-
-use log::{debug, error, info};
 
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
-use notify::Watcher;
 use serde::Serialize;
 
 mod errors;
 mod renderer;
+mod result;
 mod subprocess;
+mod watcher;
 
 use crate::errors::SsfwError;
 use crate::renderer::render_command;
 use crate::subprocess::execute_command;
+use crate::watcher::Watcher;
 
 #[derive(clap::ValueEnum, Clone, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -43,7 +43,7 @@ impl From<Shell> for String {
 struct Config {
     /// Monitoring path/glob
     #[arg(short, long)]
-    path: String,
+    pattern: String,
 
     /// Run command
     #[arg(short, long, default_value = ":")]
@@ -65,32 +65,18 @@ fn main() -> Result<(), SsfwError> {
     let config = Config::parse();
     setup_logging(&config.verbose);
     info!("🪬 ssfw started");
-    info!("On change:\t{}", &config.command);
-    let (tx, rx) = std::sync::mpsc::channel();
-    let mut watcher = init_watcher(tx, config.poll)?;
-    info!("Glob pattern:\t{}", &config.path);
-    let mut paths = glob::glob(&config.path)?;
-    register_paths(&mut watcher, &mut paths)?;
-    let mut child: Option<Child> = None;
-    for res in rx {
-        match res {
-            Ok(event) => {
-                debug!(
-                    "Event detected for file(s) {}",
-                    event
-                        .paths
-                        .iter()
-                        .map(|p| p.to_string_lossy())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                );
-                let shell: String = config.sh.clone().into();
-                let cmd = render_command(&config.command, &event)?;
-                execute_command(&cmd, &shell, &mut child)?;
-            }
-            Err(e) => error!("watch error: {:?}", e),
-        }
-    }
+    info!("Command:\t{}", &config.command);
+    info!("Pattern:\t{}", &config.pattern);
+    let pattern = glob::Pattern::new(&config.pattern)?;
+    Watcher::new()
+        .poll_interval(config.poll)
+        .watch(pattern, |path| {
+            let mut child: Option<Child> = None;
+            let shell: String = config.sh.clone().into();
+            let rendered_cmd = render_command(&config.command, path)?;
+            execute_command(&rendered_cmd, &shell, &mut child)?;
+            Ok(())
+        })?;
     Ok(())
 }
 
@@ -100,38 +86,4 @@ fn setup_logging(verbose: &Verbosity<InfoLevel>) {
         .format_timestamp(None)
         .filter_level(verbose.log_level_filter())
         .init();
-}
-
-fn init_watcher<F>(handler: F, poll_ms: u64) -> notify::Result<notify::PollWatcher>
-where
-    F: notify::EventHandler,
-{
-    debug!("Initializing PollWatcher with poll_ms={}", poll_ms);
-    let config = notify::Config::default()
-        .with_compare_contents(true)
-        .with_poll_interval(Duration::from_millis(poll_ms));
-    notify::PollWatcher::new(handler, config)
-}
-
-fn register_paths(
-    watcher: &mut notify::PollWatcher,
-    paths: &mut glob::Paths,
-) -> Result<(), SsfwError> {
-    let mut n = 0;
-    for entry in paths.into_iter() {
-        let path = entry?;
-        if let Err(e) = watcher.watch(&path, notify::RecursiveMode::NonRecursive) {
-            error!("Error adding {} to watcher: {}", path.display(), e);
-        } else {
-            debug!("Added {} to watcher", path.display());
-            n += 1;
-        }
-    }
-    if n == 0 {
-        error!("No files matched given glob pattern");
-        Err(SsfwError::EmptyFileSet)
-    } else {
-        info!("Matching files:\t{}", n);
-        Ok(())
-    }
 }

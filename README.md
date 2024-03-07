@@ -9,7 +9,7 @@ of the watched files has changed. If you do not provide a command then the progr
 run a no-op command in the shell.
 
 ```bash
-ssfw --path 'src/**' --command 'cargo test'
+ssfw --pattern 'src/**' --command 'cargo test'
 ```
 
 > [!IMPORTANT]
@@ -20,16 +20,17 @@ ssfw --path 'src/**' --command 'cargo test'
 ```bash
 🪬 Super simple file watcher
 
-Usage: ssfw [OPTIONS] --path <PATH>
+Usage: ssfw [OPTIONS] --pattern <PATTERN>
 
 Options:
-  -p, --path <PATH>        Monitoring path/glob
+  -p, --pattern <PATTERN>  Monitoring path/glob
   -c, --command <COMMAND>  Run command [default: :]
       --poll <POLL>        Poll duration (ms) [default: 500]
+      --sh <SH>            Shell to execute command in [default: zsh] [possible values: zsh, bash]
   -v, --verbose...         Increase logging verbosity
   -q, --quiet...           Decrease logging verbosity
   -h, --help               Print help
-  -V, --version   
+  -V, --version            Print version
 ```
 
 ## Variables
@@ -39,12 +40,12 @@ and not to the entire file set. To do this, you can make use of the command vari
 
 ### Supported Variables
 
-|  Name   |        Description        |
-|---------|---------------------------|
-| `fname` | Name of file that changed |
+| Name   | Description                     |
+| ------ | ------------------------------- |
+| `path` | Event detected file or dir path |
 
 ```bash
-ssfw --path 'src/**/*.ts' --command 'eslint --fix {fname}'
+ssfw --path 'src/**/*.ts' --command 'eslint --fix {path}'
 ```
 
 ## Limitations
@@ -53,10 +54,9 @@ This program has a number of limitations compared to more mature and robust file
 Some of these limitations are by design since this aims to be a "super simple" file watcher,
 but some are from the program's immaturity, namely:
 
-1. No support for files added to matching path
-2. Use of file polling instead of using system events
-3. Foreground execution only (this was a design choice and will likely not change)
-4. Currently, no support for terminating a long-lived program executed by the command. Need to implement some sort of process group management and right now that is out of scope.
+1. Use of file polling instead of using system events
+2. Foreground execution only (this was a design choice and will likely not change)
+3. Currently, no support for terminating a long-lived program executed by the command. Need to implement some sort of process group management and right now that is out of scope.
 
 ## Build
 
@@ -72,3 +72,14 @@ cargo build --release
 ```
 
 Then add to path.
+
+## Changelog
+
+### [0.2.0] - 2024-03-07
+
+Breaking change for `--path` command which is is now called `--pattern` and breaking change for `{fname}` variable which is now `{path}`.
+
+#### Issues addressed
+
+- [#1](https://github.com/mharrisb1/ssfw/issues/1)
+- [#2](https://github.com/mharrisb1/ssfw/issues/2)
