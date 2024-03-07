@@ -1,23 +1,13 @@
-use log::{debug, error};
-use notify::Event;
+use log::error;
 use regex::{Captures, Error, Regex};
+use std::path::Path;
 
-pub(crate) fn render_command(cmd_template: &str, event_ctx: &Event) -> Result<String, Error> {
-    let fnames: Vec<String> = event_ctx
-        .paths
-        .iter()
-        .map(|p| p.to_string_lossy().to_string())
-        .collect();
-    if let Some(fname) = fnames.first() {
-        debug!("Attempting to render command with variable: fname");
-        let re = Regex::new(
-            r"(?x)
-        \{\s*(?P<fname>fname)\s*\} # file name variables
-        ",
-        )?;
+pub(crate) fn render_command(cmd_template: &str, path: &Path) -> Result<String, Error> {
+    if let Some(path_str) = path.to_str() {
+        let re = Regex::new(r"\{\s*(?P<path>path)\s*\}")?;
         let replacement = |caps: &Captures| -> Result<String, &'static str> {
-            match caps.name("fname") {
-                Some(_) => Ok(fname.clone()),
+            match caps.name("path") {
+                Some(_) => Ok(path_str.to_string()),
                 None => Ok("".to_string()),
             }
         };

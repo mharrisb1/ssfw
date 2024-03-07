@@ -1,11 +1,10 @@
 #[derive(Debug)]
 pub(crate) enum SsfwError {
-    Glob(glob::GlobError),
     Notify(notify::Error),
     Pattern(glob::PatternError),
     Cmd(std::io::Error),
     Regex(regex::Error),
-    EmptyFileSet,
+    StripPath(std::path::StripPrefixError),
 }
 
 impl std::fmt::Display for SsfwError {
@@ -13,10 +12,9 @@ impl std::fmt::Display for SsfwError {
         match *self {
             SsfwError::Notify(..) => write!(f, "Error in notify service"),
             SsfwError::Pattern(..) => write!(f, "Invalid glob pattern"),
-            SsfwError::Glob(..) => write!(f, "Glob error"),
             SsfwError::Cmd(..) => write!(f, "Error running command"),
-            SsfwError::Regex(..) => write!(f, "Error during regex operations"),
-            SsfwError::EmptyFileSet => write!(f, "Pattern did not match any files"),
+            SsfwError::Regex(..) => write!(f, "Error during regex operation"),
+            SsfwError::StripPath(..) => write!(f, "Error during strip path operation"),
         }
     }
 }
@@ -26,10 +24,9 @@ impl std::error::Error for SsfwError {
         match *self {
             SsfwError::Notify(ref e) => Some(e),
             SsfwError::Pattern(ref e) => Some(e),
-            SsfwError::Glob(ref e) => Some(e),
             SsfwError::Cmd(ref e) => Some(e),
             SsfwError::Regex(ref e) => Some(e),
-            SsfwError::EmptyFileSet => None,
+            SsfwError::StripPath(ref e) => Some(e),
         }
     }
 }
@@ -46,12 +43,6 @@ impl From<glob::PatternError> for SsfwError {
     }
 }
 
-impl From<glob::GlobError> for SsfwError {
-    fn from(err: glob::GlobError) -> Self {
-        SsfwError::Glob(err)
-    }
-}
-
 impl From<std::io::Error> for SsfwError {
     fn from(err: std::io::Error) -> Self {
         SsfwError::Cmd(err)
@@ -61,5 +52,11 @@ impl From<std::io::Error> for SsfwError {
 impl From<regex::Error> for SsfwError {
     fn from(err: regex::Error) -> Self {
         SsfwError::Regex(err)
+    }
+}
+
+impl From<std::path::StripPrefixError> for SsfwError {
+    fn from(err: std::path::StripPrefixError) -> Self {
+        SsfwError::StripPath(err)
     }
 }
