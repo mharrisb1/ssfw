@@ -83,3 +83,7 @@ Breaking change for `--path` command which is is now called `--pattern` and brea
 
 - [#1](https://github.com/mharrisb1/ssfw/issues/1)
 - [#2](https://github.com/mharrisb1/ssfw/issues/2)
+
+### [0.2.1] - 2024-03-08
+
+Fixes issue where some commands will exit with status failed but will still pipe to stdout so the file watcher was not displaying the error message.
