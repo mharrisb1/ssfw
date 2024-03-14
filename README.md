@@ -23,15 +23,15 @@ ssfw --pattern 'src/**' --command 'cargo test'
 Usage: ssfw [OPTIONS] --pattern <PATTERN>
 
 Options:
-  -p, --pattern <PATTERN>  Monitoring path/glob
-  -c, --command <COMMAND>  Run command [default: :]
-      --root <ROOT>        Optional root
-      --poll <POLL>        Poll duration (ms) [default: 500]
-      --sh <SH>            Shell to execute command in [default: zsh] [possible values: zsh, bash]
-  -v, --verbose...         Increase logging verbosity
-  -q, --quiet...           Decrease logging verbosity
-  -h, --help               Print help
-  -V, --version            Print version
+  -p, --pattern <PATTERN>          Filter pattern
+  -c, --command <COMMAND>          Run command [default: :]
+  -w, --working-dir <WORKING_DIR>  Optional working directory
+      --sh <SH>                    Shell to execute command in [default: zsh] [possible values: zsh, bash]
+      --debounce <DEBOUNCE>        Optional debounce window (mulliseconds) [default: 500]
+  -v, --verbose...                 Increase logging verbosity
+  -q, --quiet...                   Decrease logging verbosity
+  -h, --help                       Print help
+  -V, --version                    Print version
 ```
 
 ## Variables
@@ -76,9 +76,15 @@ Then add to path.
 
 ## Changelog
 
+- [0.4.0](#040-2024-03-14)
 - [0.3.0](#030-2024-03-14)
 - [0.2.1](#021-2024-03-08)
 - [0.2.0](#020-2024-03-07)
+
+### [0.4.0] - 2024-03-14
+
+Move to FSEvent watcher with debounce for Mac. Helps avoid the issue that [0.3.0](#030-2024-03-14) tried to address in a better way. The debouncer is used
+to avoid duplicate events sent from FSEvent.
 
 ### [0.3.0] - 2024-03-14
 

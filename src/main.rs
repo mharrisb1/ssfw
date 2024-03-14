@@ -42,7 +42,7 @@ impl From<Shell> for String {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Config {
-    /// Monitoring path/glob
+    /// Filter pattern
     #[arg(short, long)]
     pattern: String,
 
@@ -50,17 +50,17 @@ struct Config {
     #[arg(short, long, default_value = ":")]
     command: String,
 
-    /// Optional root
-    #[arg(long)]
-    root: Option<PathBuf>,
-
-    /// Poll duration (ms)
-    #[arg(long, default_value_t = 500)]
-    poll: u64,
+    /// Optional working directory
+    #[arg(short, long)]
+    working_dir: Option<PathBuf>,
 
     /// Shell to execute command in
     #[arg(long, default_value = "zsh")]
     sh: Shell,
+
+    /// Optional debounce window (mulliseconds)
+    #[arg(long, default_value = "500")]
+    debounce: u64,
 
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
@@ -73,15 +73,13 @@ fn main() -> Result<(), SsfwError> {
     info!("Command:\t{}", &config.command);
     info!("Pattern:\t{}", &config.pattern);
     let pattern = glob::Pattern::new(&config.pattern)?;
-    Watcher::new(&config.root)
-        .poll_interval(config.poll)
-        .watch(pattern, |path| {
-            let mut child: Option<Child> = None;
-            let shell: String = config.sh.clone().into();
-            let rendered_cmd = render_command(&config.command, path)?;
-            execute_command(&rendered_cmd, &shell, &mut child)?;
-            Ok(())
-        })?;
+    Watcher::new(&config.working_dir).watch(pattern, config.debounce, |path| {
+        let mut child: Option<Child> = None;
+        let shell: String = config.sh.clone().into();
+        let rendered_cmd = render_command(&config.command, path)?;
+        execute_command(&rendered_cmd, &shell, &mut child)?;
+        Ok(())
+    })?;
     Ok(())
 }
 
