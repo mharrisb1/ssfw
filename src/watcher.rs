@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{debug, error, info};
 use notify::{Config, EventKind, PollWatcher, RecursiveMode, Watcher as NotifyWatcher};
 use std::{
     path::{Path, PathBuf},
@@ -12,10 +12,10 @@ pub(crate) struct Watcher {
 }
 
 impl Watcher {
-    pub fn new() -> Self {
+    pub fn new(root: &Option<PathBuf>) -> Self {
         let cwd = std::env::current_dir().unwrap();
         Self {
-            root: cwd,
+            root: root.clone().unwrap_or(cwd),
             poll: 500,
         }
     }
@@ -39,6 +39,7 @@ impl Watcher {
         for res in receiver {
             match res {
                 Ok(event) => {
+                    debug!("{:?}", &event);
                     let paths: Vec<&Path> = event.paths.iter().map(|pb| pb.as_path()).collect();
                     let event_type = match event.kind {
                         EventKind::Create(_) => "CREATE",
