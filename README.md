@@ -25,6 +25,7 @@ Usage: ssfw [OPTIONS] --pattern <PATTERN>
 Options:
   -p, --pattern <PATTERN>  Monitoring path/glob
   -c, --command <COMMAND>  Run command [default: :]
+      --root <ROOT>        Optional root
       --poll <POLL>        Poll duration (ms) [default: 500]
       --sh <SH>            Shell to execute command in [default: zsh] [possible values: zsh, bash]
   -v, --verbose...         Increase logging verbosity
