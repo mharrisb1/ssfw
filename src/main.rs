@@ -1,4 +1,5 @@
 use log::info;
+use std::path::PathBuf;
 use std::process::Child;
 
 use clap::Parser;
@@ -49,6 +50,10 @@ struct Config {
     #[arg(short, long, default_value = ":")]
     command: String,
 
+    /// Optional root
+    #[arg(long)]
+    root: Option<PathBuf>,
+
     /// Poll duration (ms)
     #[arg(long, default_value_t = 500)]
     poll: u64,
@@ -68,7 +73,7 @@ fn main() -> Result<(), SsfwError> {
     info!("Command:\t{}", &config.command);
     info!("Pattern:\t{}", &config.pattern);
     let pattern = glob::Pattern::new(&config.pattern)?;
-    Watcher::new()
+    Watcher::new(&config.root)
         .poll_interval(config.poll)
         .watch(pattern, |path| {
             let mut child: Option<Child> = None;
