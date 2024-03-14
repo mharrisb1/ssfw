@@ -80,7 +80,7 @@ Then add to path.
 
 Breaking change for `--path` command which is is now called `--pattern` and breaking change for `{fname}` variable which is now `{path}`.
 
-#### Issues addressed
+#### Related issues
 
 - [#1](https://github.com/mharrisb1/ssfw/issues/1)
 - [#2](https://github.com/mharrisb1/ssfw/issues/2)
@@ -88,3 +88,12 @@ Breaking change for `--path` command which is is now called `--pattern` and brea
 ### [0.2.1] - 2024-03-08
 
 Fixes issue where some commands will exit with status failed but will still pipe to stdout so the file watcher was not displaying the error message.
+
+### [0.3.0] - 2024-03-14
+
+Ran into an issue on a large project where the watcher was taking so long to diff that it became unusable. This release adds a new `--root` option
+so you can specify an alternative root for the watcher other than `cwd`.
+
+#### Related issues
+
+- [#6](https://github.com/mharrisb1/ssfw/issues/6)
