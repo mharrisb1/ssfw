@@ -14,7 +14,7 @@ pub(crate) fn render_command(cmd_template: &str, path: &Path) -> Result<String, 
         match replace_all(&re, cmd_template, replacement) {
             Ok(s) => return Ok(s),
             Err(e) => {
-                error!("Error during variable injection for fname: {}", e);
+                error!("Error during variable injection for path: {}", e);
                 return Ok(cmd_template.to_string());
             }
         }

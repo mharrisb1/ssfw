@@ -1,5 +1,6 @@
-use log::{debug, error, info};
-use notify::{Config, EventKind, PollWatcher, RecursiveMode, Watcher as NotifyWatcher};
+use log::{error, info, trace};
+// use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher as NotifyWatcher};
+use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode};
 use std::{
     path::{Path, PathBuf},
     sync::mpsc::channel,
@@ -8,7 +9,6 @@ use std::{
 
 pub(crate) struct Watcher {
     root: PathBuf,
-    poll: u64,
 }
 
 impl Watcher {
@@ -16,43 +16,31 @@ impl Watcher {
         let cwd = std::env::current_dir().unwrap();
         Self {
             root: root.clone().unwrap_or(cwd),
-            poll: 500,
         }
-    }
-
-    pub fn poll_interval(&mut self, poll_ms: u64) -> &Self {
-        self.poll = poll_ms;
-        self
     }
 
     pub fn watch(
         &self,
         pattern: glob::Pattern,
+        debounce_ms: u64,
         f: impl Fn(&Path) -> crate::result::Result<()>,
     ) -> crate::result::Result<()> {
         let (sender, receiver) = channel();
-        let config = Config::default()
-            .with_compare_contents(true)
-            .with_poll_interval(Duration::from_millis(self.poll));
-        let mut notify_watcher = PollWatcher::new(sender, config)?;
-        notify_watcher.watch(self.root.as_path(), RecursiveMode::Recursive)?;
+        let mut debouncer = new_debouncer(Duration::from_millis(debounce_ms), sender)?;
+        debouncer
+            .watcher()
+            .watch(self.root.as_path(), RecursiveMode::Recursive)?;
+        let cwd = std::env::current_dir().unwrap();
         for res in receiver {
             match res {
-                Ok(event) => {
-                    debug!("{:?}", &event);
-                    let paths: Vec<&Path> = event.paths.iter().map(|pb| pb.as_path()).collect();
-                    let event_type = match event.kind {
-                        EventKind::Create(_) => "CREATE",
-                        EventKind::Modify(_) => "UPDATE",
-                        EventKind::Remove(_) => "DELETE",
-                        _ => "UNKNOWN",
-                    };
-                    for path in paths {
-                        let relative_path = path.strip_prefix(&self.root)?;
+                Ok(events) => {
+                    for event in events {
+                        trace!("{:?}", &event);
+                        let path = event.path.as_path();
+                        let relative_path = path.strip_prefix(&cwd)?;
                         if pattern.matches_path(relative_path) {
                             info!(
-                                "Event type {} detected for path {}",
-                                event_type,
+                                "Event detected for path {}",
                                 relative_path.to_str().unwrap_or_default()
                             );
                             f(relative_path)?;
