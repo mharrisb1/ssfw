@@ -4,12 +4,11 @@ A minimal file watcher that watches for modifications to files and executes a co
 
 ## Usage
 
-The program expects a set of files to watch and an optional command to run when one
-of the watched files has changed. If you do not provide a command then the program will
-run a no-op command in the shell.
+The program will watch for file system events and will compare those events to a given pattern. If the pattern
+matches the file from the event, a command will be ran.
 
 ```bash
-ssfw --pattern 'src/**' --command 'cargo test'
+ssfw --pattern '*.rs' --command 'cargo test'
 ```
 
 > [!IMPORTANT]
@@ -36,8 +35,8 @@ Options:
 
 ## Variables
 
-Sometimes you will just want to run a given command on the exact file or files that have changed
-and not to the entire file set. To do this, you can make use of the command variables.
+Sometimes you will just want to run a given command on the exact file that changed. To do this, you can make use of variables.
+Variables are names surrounded with curly braces and will be rendered on command execute.
 
 ### Supported Variables
 
@@ -46,7 +45,7 @@ and not to the entire file set. To do this, you can make use of the command vari
 | `path` | Event detected file or dir path |
 
 ```bash
-ssfw --path 'src/**/*.ts' --command 'eslint --fix {path}'
+ssfw --pattern '*.ts' --command 'eslint --fix {path}'
 ```
 
 ## Limitations
@@ -55,24 +54,9 @@ This program has a number of limitations compared to more mature and robust file
 Some of these limitations are by design since this aims to be a "super simple" file watcher,
 but some are from the program's immaturity, namely:
 
-1. Use of file polling instead of using system events
-2. Foreground execution only (this was a design choice and will likely not change)
-3. Currently, no support for terminating a long-lived program executed by the command. Need to implement some sort of process group management and right now that is out of scope.
-
-## Build
-
-> [!WARNING]
-> Only tested on Apple M1 Pro
-
-Currently, the only option for using this tool is to build it from source.
-
-```bash
-git clone https://github.com/mharrisb1/ssfw.git
-cd ssfw
-cargo build --release
-```
-
-Then add to path.
+1. Foreground execution only (this was a design choice and will likely not change)
+2. Currently, no support for terminating a long-lived program executed by the command. Need to implement some sort of process group management and right now that is out of scope.
+3. No support for globbing multiple files types (see [this SO post](https://stackoverflow.com/a/60371634))
 
 ## Changelog
 
