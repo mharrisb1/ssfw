@@ -24,9 +24,11 @@ Usage: ssfw [OPTIONS] --pattern <PATTERN>
 Options:
   -p, --pattern <PATTERN>          Filter pattern
   -c, --command <COMMAND>          Run command [default: :]
-  -w, --working-dir <WORKING_DIR>  Optional working directory
+  -w, --working-dir <WORKING_DIR>  Optional working directory [default: .]
       --sh <SH>                    Shell to execute command in [default: zsh] [possible values: zsh, bash]
-      --debounce <DEBOUNCE>        Optional debounce window (mulliseconds) [default: 500]
+      --debounce <DEBOUNCE>        Optional debounce window (ms) [default: 500]
+      --force-poll                 Force poll watcher
+      --poll <POLL>                Polling interval (ms). Ignored unless force poll is used [default: 500]
   -v, --verbose...                 Increase logging verbosity
   -q, --quiet...                   Decrease logging verbosity
   -h, --help                       Print help
@@ -60,10 +62,19 @@ but some are from the program's immaturity, namely:
 
 ## Changelog
 
+- [0.5.0](#050-2024-03-24)
 - [0.4.0](#040-2024-03-14)
 - [0.3.0](#030-2024-03-14)
 - [0.2.1](#021-2024-03-08)
 - [0.2.0](#020-2024-03-07)
+
+### [0.5.0] - 2024-03-24
+
+Adds option to use `notify::PollWatcher` instead of debounce watcher.
+
+#### Related issues
+
+- [#9: Avoid infinite loop when command changes file](https://github.com/mharrisb1/ssfw/issues/9)
 
 ### [0.4.0] - 2024-03-14
 
@@ -77,7 +88,7 @@ so you can specify an alternative root for the watcher other than `cwd`.
 
 #### Related issues
 
-- [#6](https://github.com/mharrisb1/ssfw/issues/6)
+- [#6: Add optional root](https://github.com/mharrisb1/ssfw/issues/6)
 
 ### [0.2.1] - 2024-03-08
 
@@ -89,5 +100,5 @@ Breaking change for `--path` command which is is now called `--pattern` and brea
 
 #### Related issues
 
-- [#1](https://github.com/mharrisb1/ssfw/issues/1)
-- [#2](https://github.com/mharrisb1/ssfw/issues/2)
+- [#1: feat: add newly created files to watch paths](https://github.com/mharrisb1/ssfw/issues/1)
+- [#2: bug: handle file delete](https://github.com/mharrisb1/ssfw/issues/2)
