@@ -1,12 +1,13 @@
-use log::{debug, error, info, trace};
-use notify_debouncer_mini::{new_debouncer_opt, notify, Config};
 use std::{path::Path, sync::mpsc::channel, time::Duration};
 
-pub(crate) struct Watcher<'a> {
+use log::{debug, error, info, trace};
+use notify::{Config, Watcher as IWatcher};
+
+pub(crate) struct PollWatcher<'a> {
     root: &'a Path,
 }
 
-impl<'a> Watcher<'a> {
+impl<'a> PollWatcher<'a> {
     pub fn new(root: &'a Path) -> Self {
         Self { root }
     }
@@ -14,26 +15,23 @@ impl<'a> Watcher<'a> {
     pub fn watch(
         &self,
         pattern: glob::Pattern,
-        debounce_ms: u64,
+        poll_ms: u64,
         f: impl Fn(&Path) -> crate::result::Result<()>,
     ) -> crate::result::Result<()> {
-        debug!("Using debuounced event watcher");
+        debug!("Using poll watcher");
         let (sender, receiver) = channel();
         let config = Config::default()
-            .with_timeout(Duration::from_millis(debounce_ms))
-            .with_notify_config(notify::Config::default().with_compare_contents(true));
-        let mut debouncer = new_debouncer_opt::<_, notify::FsEventWatcher>(config, sender)?;
-        debouncer
-            .watcher()
-            .watch(self.root, notify::RecursiveMode::Recursive)?;
-        let cwd = std::env::current_dir().unwrap();
+            .with_compare_contents(true)
+            .with_poll_interval(Duration::from_millis(poll_ms));
+        let mut watcher = notify::PollWatcher::new(sender, config)?;
+        watcher.watch(self.root, notify::RecursiveMode::Recursive)?;
         for res in receiver {
             match res {
-                Ok(events) => {
-                    for event in events {
-                        trace!("{:?}", &event);
-                        let path = event.path.as_path();
-                        let relative_path = path.strip_prefix(&cwd)?;
+                Ok(event) => {
+                    trace!("{:?}", event);
+                    for path in event.paths {
+                        let path = path.as_path();
+                        let relative_path = path;
                         if pattern.matches_path(relative_path) {
                             info!(
                                 "Event detected for path {}",

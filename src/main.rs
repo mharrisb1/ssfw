@@ -7,12 +7,14 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use serde::Serialize;
 
 mod errors;
+mod poll_watcher;
 mod renderer;
 mod result;
 mod subprocess;
 mod watcher;
 
 use crate::errors::SsfwError;
+use crate::poll_watcher::PollWatcher;
 use crate::renderer::render_command;
 use crate::subprocess::execute_command;
 use crate::watcher::Watcher;
@@ -51,16 +53,24 @@ struct Config {
     command: String,
 
     /// Optional working directory
-    #[arg(short, long)]
-    working_dir: Option<PathBuf>,
+    #[arg(short, long, default_value = ".")]
+    working_dir: PathBuf,
 
     /// Shell to execute command in
     #[arg(long, default_value = "zsh")]
     sh: Shell,
 
-    /// Optional debounce window (mulliseconds)
+    /// Optional debounce window (ms)
     #[arg(long, default_value = "500")]
     debounce: u64,
+
+    /// Force poll watcher
+    #[arg(long, default_value = "false")]
+    force_poll: bool,
+
+    /// Polling interval (ms). Ignored unless force poll is used
+    #[arg(long, default_value = "500")]
+    poll: u64,
 
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
@@ -73,13 +83,17 @@ fn main() -> Result<(), SsfwError> {
     info!("Command:\t{}", &config.command);
     info!("Pattern:\t{}", &config.pattern);
     let pattern = glob::Pattern::new(&config.pattern)?;
-    Watcher::new(&config.working_dir).watch(pattern, config.debounce, |path| {
+    let f = |path: &_| {
         let mut child: Option<Child> = None;
         let shell: String = config.sh.clone().into();
         let rendered_cmd = render_command(&config.command, path)?;
         execute_command(&rendered_cmd, &shell, &mut child)?;
         Ok(())
-    })?;
+    };
+    match config.force_poll {
+        false => Watcher::new(config.working_dir.as_path()).watch(pattern, config.debounce, f)?,
+        true => PollWatcher::new(config.working_dir.as_path()).watch(pattern, config.poll, f)?,
+    }
     Ok(())
 }
 
