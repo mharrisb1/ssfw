@@ -1,5 +1,5 @@
 use log::{debug, error, info, trace};
-use notify_debouncer_mini::{new_debouncer_opt, notify, Config};
+use notify_debouncer_mini::{new_debouncer, notify};
 use std::{path::Path, sync::mpsc::channel, time::Duration};
 
 pub(crate) struct Watcher<'a> {
@@ -19,10 +19,7 @@ impl<'a> Watcher<'a> {
     ) -> crate::result::Result<()> {
         debug!("Using debuounced event watcher");
         let (sender, receiver) = channel();
-        let config = Config::default()
-            .with_timeout(Duration::from_millis(debounce_ms))
-            .with_notify_config(notify::Config::default().with_compare_contents(true));
-        let mut debouncer = new_debouncer_opt::<_, notify::FsEventWatcher>(config, sender)?;
+        let mut debouncer = new_debouncer(Duration::from_millis(debounce_ms), sender)?;
         debouncer
             .watcher()
             .watch(self.root, notify::RecursiveMode::Recursive)?;
@@ -35,10 +32,8 @@ impl<'a> Watcher<'a> {
                         let path = event.path.as_path();
                         let relative_path = path.strip_prefix(&cwd)?;
                         if pattern.matches_path(relative_path) {
-                            info!(
-                                "Event detected for path {}",
-                                relative_path.to_str().unwrap_or_default()
-                            );
+                            let str_path = relative_path.to_str().unwrap_or_default();
+                            info!("Event detected for path {}", str_path);
                             f(relative_path)?;
                         }
                     }
