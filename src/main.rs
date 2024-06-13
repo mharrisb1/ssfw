@@ -4,6 +4,7 @@ use std::process::Child;
 
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use globset::Glob;
 use serde::Serialize;
 
 mod errors;
@@ -82,7 +83,9 @@ fn main() -> Result<(), SsfwError> {
     info!("🪬 ssfw started");
     info!("Command:\t{}", &config.command);
     info!("Pattern:\t{}", &config.pattern);
-    let pattern = glob::Pattern::new(&config.pattern)?;
+    // let pattern = glob::Pattern::new(&config.pattern)?;
+    let pattern = Glob::new(&config.pattern)?.compile_matcher();
+
     let f = |path: &_| {
         let mut child: Option<Child> = None;
         let shell: String = config.sh.clone().into();

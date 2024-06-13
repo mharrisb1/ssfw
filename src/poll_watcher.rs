@@ -1,5 +1,6 @@
 use std::{path::Path, sync::mpsc::channel, time::Duration};
 
+use globset::GlobMatcher;
 use log::{debug, error, info, trace};
 use notify::{Config, Watcher as IWatcher};
 
@@ -14,7 +15,7 @@ impl<'a> PollWatcher<'a> {
 
     pub fn watch(
         &self,
-        pattern: glob::Pattern,
+        pattern: GlobMatcher,
         poll_ms: u64,
         f: impl Fn(&Path) -> crate::result::Result<()>,
     ) -> crate::result::Result<()> {
@@ -32,7 +33,7 @@ impl<'a> PollWatcher<'a> {
                     for path in event.paths {
                         let path = path.as_path();
                         let relative_path = path;
-                        if pattern.matches_path(relative_path) {
+                        if pattern.is_match(relative_path) {
                             info!(
                                 "Event detected for path {}",
                                 relative_path.to_str().unwrap_or_default()
