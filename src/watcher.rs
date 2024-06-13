@@ -1,3 +1,4 @@
+use globset::GlobMatcher;
 use log::{debug, error, info, trace};
 use notify_debouncer_mini::{new_debouncer, notify};
 use std::{path::Path, sync::mpsc::channel, time::Duration};
@@ -13,7 +14,7 @@ impl<'a> Watcher<'a> {
 
     pub fn watch(
         &self,
-        pattern: glob::Pattern,
+        pattern: GlobMatcher,
         debounce_ms: u64,
         f: impl Fn(&Path) -> crate::result::Result<()>,
     ) -> crate::result::Result<()> {
@@ -31,7 +32,7 @@ impl<'a> Watcher<'a> {
                         trace!("{:?}", &event);
                         let path = event.path.as_path();
                         let relative_path = path.strip_prefix(&cwd)?;
-                        if pattern.matches_path(relative_path) {
+                        if pattern.is_match(relative_path) {
                             let str_path = relative_path.to_str().unwrap_or_default();
                             info!("Event detected for path {}", str_path);
                             f(relative_path)?;

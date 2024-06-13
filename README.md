@@ -34,7 +34,7 @@ Options:
 
 ## Patterns
 
-Any valid [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern can be used for filtering events. If a file event is detected that matches the given patter, then a command will be ran.
+Any valid [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) pattern can be used for filtering events. If a file event is detected that matches the given patter, then a command will be ran.
 
 ## Variables
 
@@ -49,7 +49,7 @@ For example:
 ssfw --pattern '*.ts' --command 'eslint --fix {path}'
 ```
 
-This would run `eslint --fix` *just* for the file from the event.
+This would run `eslint --fix` _just_ for the file from the event.
 
 ### Supported Variables
 
