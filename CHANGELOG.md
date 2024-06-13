@@ -7,6 +7,10 @@
 - [0.2.1](#021-2024-03-08)
 - [0.2.0](#020-2024-03-07)
 
+## [0.6.0] - 2024-06-13
+
+Uses [globset](https://docs.rs/globset/latest/globset) as pattern matcher since it supports `{a,b}` patterns.
+
 ## [0.5.1] - 2024-04-23
 
 Uses generic `new_debouncer` to avoid explicit usage of FSEvent since that is local to MacOS.
