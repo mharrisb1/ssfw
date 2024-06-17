@@ -34,7 +34,7 @@ Options:
 
 ## Patterns
 
-Any valid [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) pattern can be used for filtering events. If a file event is detected that matches the given patter, then a command will be ran.
+Any valid [glob](https://docs.rs/globset/latest/globset/#syntax) pattern can be used for filtering events. If a file event is detected that matches the given patter, then the command will be ran.
 
 ## Variables
 
@@ -64,7 +64,6 @@ Some of these limitations are by design since this aims to be a "super simple" f
 
 1. Foreground execution only (this was a design choice and will likely not change)
 2. Currently, no support for terminating a long-lived program executed by the command. Need to implement some sort of process group management and right now that is out of scope.
-3. No support for globbing multiple files types (see [this SO post](https://stackoverflow.com/a/60371634))
 
 ### Alternatives
 
