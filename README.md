@@ -1,6 +1,6 @@
 # 🪬 ssfw - Super simple file watcher
 
-A minimal file watcher that executes a command in the foreground.
+A minimal file watcher that executes a command in the foreground on file event.
 
 ## Usage
 
