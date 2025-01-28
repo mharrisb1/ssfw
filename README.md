@@ -67,7 +67,8 @@ Some of these limitations are by design since this aims to be a "super simple" f
 
 ### Alternatives
 
-For anyone wanting a mature file wathcer, the usual suspects are recommended:
+For anyone wanting a mature file watcher, the usual suspects are recommended:
 
+- [entr](https://github.com/eradman/entr)
 - [watchexec](https://github.com/watchexec/watchexec)
 - [Watchman](https://facebook.github.io/watchman/)
