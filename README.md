@@ -46,7 +46,7 @@ Variables allow you to pass values from the event context to the command.
 For example:
 
 ```bash
-ssfw --pattern '*.ts' --command 'eslint --fix {path}'
+ssfw -p 'src/*.{js,ts,vue}' -c 'pnpm eslint --fix {path}'
 ```
 
 This would run `eslint --fix` _just_ for the file from the event.
